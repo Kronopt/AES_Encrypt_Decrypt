@@ -1,4 +1,4 @@
-# AES_encrypt_decrypt_files
+# AES_Encrypt_Decrypt
 Encrypt and Decrypt files using AES (Advanced Encryption Standard)
 
 IN DEVELOPMENT
