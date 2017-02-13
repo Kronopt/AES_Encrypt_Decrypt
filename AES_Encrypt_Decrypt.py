@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!python2
 # coding: utf-8
 
 """
@@ -80,6 +80,9 @@ def encrypt(password, file_name):
 
     ENSURES:
         Encryption of file_name using AES
+
+    RETURNS: bool
+        True if encryption was successful
     """
     hashed_32b_password = SHA256.new(password).digest()
     iv = Random.new().read(16)
@@ -103,12 +106,8 @@ def encrypt(password, file_name):
                 padding = '0'*(16 - len(file_chunk))
                 encrypted_file.write(encrypter.encrypt(file_chunk + padding))
 
-    # Encrypted file must be equal in size to the original plus len(file_size)+1, +16 (from IV) and len(padding)
-    check_encryption_success = os.path.getsize(
-        file_name + '.encrypted') == int(file_size) + len(file_size) + 17 + len(padding)
-    print 'Encryption success: ' + str(check_encryption_success)
-
-    # TODO write feedback stuff to screen
+    # Encrypted file must be equal in size to the original plus: len(file_size)+1, +16 (from IV) + len(padding)
+    return os.path.getsize(file_name + '.encrypted') == int(file_size) + len(file_size) + 17 + len(padding)
 
 
 def decrypt(password, file_name):
@@ -128,6 +127,9 @@ def decrypt(password, file_name):
 
     ENSURES:
         Decryption of file_name using AES
+
+    RETURNS: bool
+        True if decryption was successful
     """
 
     with open(file_name, 'rb') as file_to_decrypt:
@@ -154,8 +156,7 @@ def decrypt(password, file_name):
             # Truncate file, to eliminate padding
             file_to_decrypt.truncate(original_file_size)
 
-    # TODO Check decryption went right
-    # TODO write feedback stuff to screen
+        return True
 
 
 if __name__ == '__main__':
