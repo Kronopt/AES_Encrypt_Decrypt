@@ -5,63 +5,114 @@
 AES ENCRYPT DECRYPT
 Encrypts and Decrypts files using AES
 
-TO DO DEPENDENCIES
-TO DO HOW TO RUN
+DEPENDENCIES:
+    - Python 2.7
+    - pycrypto
+
+HOW TO RUN:
+    - Through the command line.
+      Allows for the encryption or decryption of single files or other specific directories;
+      For more help, call the script with the -h parameter
 """
 
 import argparse
 import os
+from time import sleep
 from Crypto import Random
 from Crypto.Cipher import AES
 from Crypto.Hash import SHA256
 
 __author__ = 'Pedro HC David, https://github.com/Kronopt'
 __credits__ = ['Pedro HC David']
-__version__ = 'dev3'
-__date__ = '02:17h, 08/02/2017'
+__version__ = '0.2'
+__date__ = '02:45h, 20/02/2017'
 __status__ = 'Production'
 
 
-def main(xcrypt, password, directory):
+def main(crypt_function, password, directory):
     """
     Encrypts or Decrypts every file in a directory or just a single file
     Checks whether 'directory' is really a directory or just a file
 
     PARAMETERS:
-        xcrypt : function
+        crypt_function : function
             One of two functions: encrypt or decrypt
         password : str
             Password used to encrypt or decrypt
         directory : str
-            Represents a file path or a directory
+            Represents a file path or a directory (using forward slashes: /)
 
     REQUIRES:
-        xcrypt must be one of the two available functions: encrypt or decrypt
+        crypt_function must be one of the two available functions: encrypt or decrypt
 
     ENSURES:
         Encrypt or Decrypt of 'directory' using AES, be it a file or a whole directory
     """
-
-    # Handles directories
-    if os.path.isdir(directory):
-        # TODO add some visual feedback, like list of files to encrypt/decrypt, and show warning if there are no files
-        # TODO if decrypt, filter files for those with .encrypted extension
-        files_to_xcrypt = filter(os.path.isfile, os.listdir(directory))
-        files_to_xcrypt.sort()
-
-        for i in files_to_xcrypt:
-            xcrypt(password, i)
-            # TODO write feedback stuff to screen
-
-    # Handles single files
-    elif os.path.isfile(directory):
-        xcrypt(password, directory)
-        # TODO write feedback stuff to screen
+    # Apart from the default directory, all other directories (inputted by user) must have forward slashes
+    if "\\" in directory and directory != os.getcwd():
+        print "Please use forward slashes ('/') on your file/directory path"
 
     else:
-        print "'" + directory + "' does not exist..."
+        directory = os.path.normpath(directory)  # Regularizes path slashes
 
-    raw_input()
+        # Check whether directory is an actual directory or just a file
+        if os.path.exists(directory):
+            if os.path.isdir(directory):
+                # Filter for files (and remove self from the list, just in case)
+                files_to_crypt = filter(lambda file_path: all(
+                    [os.path.isfile(os.path.join(directory, file_path)), not file_path.endswith(__file__)]),
+                                        os.listdir(directory))
+                files_to_crypt.sort()
+
+            else:
+                files_to_crypt = [directory]
+
+            # If decrypting, filters for files ending in .encrypted
+            if crypt_function.__name__ is "decrypt":
+                files_to_crypt = filter(lambda file_name: file_name.endswith(".encrypted"), files_to_crypt)
+
+            # File list can be empty
+            if len(files_to_crypt) == 0:
+                print "No files to", crypt_function.__name__ + "."
+                print "This can be for several reasons:"
+                print "  1. Directory lacking any files"
+                print "  2. Lack of '.encrypted' extension when decrypting"
+                print "  3. Badly formed path"
+                print "  4. On some platforms, checking for the existence of the given directory may not be possible" \
+                      " if permission is not granted"
+
+            else:
+                # Visual feedback
+                print "Files to", crypt_function.__name__ + ":"
+                for f in files_to_crypt:
+                    print "   ", f
+
+                # Prompt for encryption/decryption start
+                no_correct_answer_given_yet = True
+                while no_correct_answer_given_yet:
+                    answer = raw_input("Do you wish to continue (y/n)? ")
+
+                    if answer == "y":
+                        print
+                        print crypt_function.__name__.capitalize() + "ing:"
+
+                        for i in files_to_crypt:
+                            print i, "...",
+
+                            if crypt_function(password, os.path.join(directory, i)):
+                                print "done"
+                            else:
+                                print "failed"
+                        no_correct_answer_given_yet = False
+
+                    elif answer == "n":
+                        print "No files", crypt_function.__name__ + "ed"
+                        no_correct_answer_given_yet = False
+
+        else:
+            print "'" + directory + "' does not exist..."
+
+    sleep(2)
 
 
 def encrypt(password, file_name):
@@ -87,7 +138,7 @@ def encrypt(password, file_name):
     hashed_32b_password = SHA256.new(password).digest()
     iv = Random.new().read(16)
     encrypter = AES.new(key=hashed_32b_password, mode=AES.MODE_CBC, IV=iv)
-    file_size = os.path.getsize(file_name)
+    file_size = str(os.path.getsize(file_name))
 
     with open(file_name, 'rb') as file_to_encrypt:
         with open(file_name + '.encrypted', 'ab') as encrypted_file:
@@ -154,20 +205,19 @@ def decrypt(password, file_name):
                 file_chunk = file_to_decrypt.read(16)
 
             # Truncate file, to eliminate padding
-            file_to_decrypt.truncate(original_file_size)
+            decrypted_file.truncate(original_file_size)
 
         return True
 
 
 if __name__ == '__main__':
-    # TODO Review options and argument properties
     parser = argparse.ArgumentParser(description='Encrypt and Decrypt files using AES')
 
-    parser.add_argument('-encrypt', help='Encrypt file or directory')
-    parser.add_argument('-decrypt', help='Decrypt file or directory')
-    parser.add_argument('-file', nargs='?', const=os.getcwd(), default=os.getcwd(),
-                        metavar='dir', help='Directory or file path')
+    parser.add_argument('function', choices=["encrypt", "decrypt"], help='Encrypt or Decrypt function')
+    parser.add_argument('password', help='Any combination of unicode characters')
+    parser.add_argument('file', nargs='?', const=os.getcwd(), default=os.getcwd(),
+                        metavar='dir', help='Directory or file path, using forward slashes (/)')
 
     parser = parser.parse_args()
 
-    #main(parser.encrypt, parser.file)
+    main(eval(parser.function), parser.password, parser.file)
