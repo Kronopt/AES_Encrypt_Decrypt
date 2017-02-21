@@ -17,7 +17,6 @@ HOW TO RUN:
 
 import argparse
 import os
-from time import sleep
 from Crypto import Random
 from Crypto.Cipher import AES
 from Crypto.Hash import SHA256
@@ -112,7 +111,7 @@ def main(crypt_function, password, directory):
         else:
             print "'" + directory + "' does not exist..."
 
-    sleep(2)
+    raw_input("\nPress Enter to exit...")
 
 
 def encrypt(password, file_name):
@@ -211,12 +210,13 @@ def decrypt(password, file_name):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Encrypt and Decrypt files using AES')
+    parser = argparse.ArgumentParser(
+        description='Encrypt and Decrypt files using AES (original files are not affected)')
 
-    parser.add_argument('function', choices=["encrypt", "decrypt"], help='Encrypt or Decrypt function')
+    parser.add_argument('function', choices=["encrypt", "decrypt"], help='Encrypt or Decrypt function (chose one)')
     parser.add_argument('password', help='Any combination of unicode characters')
-    parser.add_argument('file', nargs='?', const=os.getcwd(), default=os.getcwd(),
-                        metavar='dir', help='Directory or file path, using forward slashes (/)')
+    parser.add_argument('file', nargs='?', const=os.getcwd(), default=os.getcwd(), metavar='dir',
+                        help='Directory or file path, using forward slashes (/) (defaults to current directory)')
 
     parser = parser.parse_args()
 
