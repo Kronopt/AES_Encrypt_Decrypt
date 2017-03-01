@@ -37,6 +37,9 @@ def install_dependencies():
     print "pycrypto needs Microsoft Visual C++ 9.0, make sure you install it first: http://aka.ms/vcpython27"
     raw_input("Press any key to continue...")
 
+    print
+    print "Installing dependencies for AES_Encrypt_Decrypt.py"
+
     # Install dependencies
     subprocess.call([python_exe, "-m", "pip", "install"] + dependencies)
 
